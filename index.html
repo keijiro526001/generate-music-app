@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Modern Drum & Melody Machine</title>
+    <title>AI Composer & Drum Machine</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,23 +15,20 @@
 
     <label>Steps:</label>
     <select id="stepSelect">
-        <option value="32" selected>32 Steps</option>
-        <option value="64">64 Steps</option>
+        <option value="32">32 Steps</option>
+        <option value="64" selected>64 Steps</option>
     </select>
 
     <button id="generateMelody">Generate Melody</button>
     <button id="generateDrum">Generate Drum</button>
     <button id="play">Play</button>
     <button id="stop">Stop</button>
+    <button id="exportMidi" style="background-color: #673ab7;">Export MIDI</button>
 </div>
 
-<div id="keyDisplay" style="margin-bottom: 15px; font-weight: bold; color: #ffa726; font-size: 1.2em;">
-    Key: Ready
-</div>
-
-<div class="save-controls">
-    <h3>Save / Load Slots</h3>
-    <div id="slotContainer"></div>
+<div id="infoDisplay" style="margin-bottom: 15px;">
+    <span id="keyDisplay" style="font-weight: bold; color: #ffa726; font-size: 1.2em; margin-right: 20px;">Key: Ready</span>
+    <span id="chordDisplay" style="font-weight: bold; color: #66bb6a; font-size: 1.2em;">Chords: -</span>
 </div>
 
 <div class="main-container">

@@ -1,111 +1,29 @@
 body {
-    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-family: 'Segoe UI', sans-serif;
     text-align: center;
     background-color: #121212;
     color: #e0e0e0;
     padding: 20px;
 }
-
-h1, h2, h3 {
-    color: #ffffff;
-    font-weight: 300;
-}
-
-.controls, .save-controls {
+.controls {
     margin-bottom: 20px;
     background: #1e1e1e;
     padding: 15px;
     border-radius: 8px;
     display: inline-block;
 }
-
-select, input {
-    background: #333;
-    color: white;
-    border: 1px solid #444;
-    padding: 5px;
-    border-radius: 4px;
-    margin-right: 10px;
-}
-
-button {
-    background-color: #333;
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    margin: 5px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.2s;
-}
-
+select, input { background: #333; color: white; border: 1px solid #444; padding: 5px; margin-right: 10px; }
+button { background-color: #333; color: white; border: none; padding: 10px 18px; margin: 5px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
 button:hover { background-color: #444; }
-#generateMelody, #generateDrum { background-color: #2e5cb8; }
 #play { background-color: #2e7d32; }
 #stop { background-color: #c62828; }
 
-.slot-btn {
-    background-color: #424242;
-    font-size: 12px;
-}
-.slot-btn.saved {
-    border: 1px solid #ffa726;
-    color: #ffa726;
-}
-
-/* 64ステップ時に画面をはみ出してもスクロールできるように設定 */
-.main-container {
-    overflow-x: auto;
-    padding-bottom: 20px;
-}
-
-#sequencer, #pianoRoll {
-    display: inline-block;
-    background: #1e1e1e;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    min-width: min-content; /* 中身に合わせて広がる */
-}
-
-.row, .noteRow {
-    display: flex;
-    align-items: center;
-    margin-bottom: 2px;
-}
-
-.step, .noteCell {
-    width: 20px; /* 少し小さくして視認性を確保 */
-    height: 24px;
-    margin: 1px;
-    background-color: #2a2a2a;
-    border: 1px solid #333;
-    border-radius: 2px;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-
-/* 8ステップごとの区切りを強調 */
-.step:nth-child(8n+2),
-.noteCell:nth-child(8n+2) {
-    border-left: 2px solid #666 !important;
-}
-
-.active { background-color: #ffa726; box-shadow: 0 0 8px #ffa726; }
-.noteActive { background-color: #66bb6a; box-shadow: 0 0 8px #66bb6a; }
-
-.playing, .notePlaying {
-    background-color: #ffffff !important;
-    filter: brightness(1.5);
-}
-
-.noteLabel, .inst-label {
-    width: 60px;
-    font-size: 11px;
-    text-align: right;
-    margin-right: 12px;
-    color: #aaa;
-    text-transform: uppercase;
-    flex-shrink: 0;
-}
+.main-container { overflow-x: auto; padding-bottom: 20px; }
+#sequencer, #pianoRoll { display: inline-block; background: #1e1e1e; padding: 20px; border-radius: 8px; min-width: min-content; }
+.row, .noteRow { display: flex; align-items: center; margin-bottom: 2px; }
+.step, .noteCell { width: 20px; height: 24px; margin: 1px; background-color: #2a2a2a; border: 1px solid #333; cursor: pointer; flex-shrink: 0; }
+.step:nth-child(16n+2), .noteCell:nth-child(16n+2) { border-left: 3px solid #888 !important; }
+.active { background-color: #ffa726; }
+.noteActive { background-color: #66bb6a; }
+.playing, .notePlaying { background-color: #ffffff !important; }
+.noteLabel, .inst-label { width: 60px; font-size: 11px; text-align: right; margin-right: 12px; color: #aaa; flex-shrink: 0; }
