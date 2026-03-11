@@ -1,0 +1,52 @@
+body{
+  font-family: sans-serif;
+  text-align:center;
+}
+
+.row{
+  margin:10px;
+}
+
+.step{
+  width:40px;
+  height:40px;
+  margin:5px;
+  border:1px solid black;
+  display:inline-block;
+  cursor:pointer;
+}
+
+.step:nth-of-type(4n){
+  border-right:3px solid #000;
+}
+
+.active{
+  background:orange;
+}
+
+.playing{
+  border:3px solid red;
+}
+
+#pianoRoll{
+  margin-top:20px;
+}
+
+.noteRow{
+  display:flex;
+}
+
+.noteCell{
+  width:30px;
+  height:22px;
+  border:1px solid #ccc;
+  cursor:pointer;
+}
+
+.noteActive{
+  background:#4caf50;
+}
+
+.notePlaying{
+  background:#ff9800;
+}
