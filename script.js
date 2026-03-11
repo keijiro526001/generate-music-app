@@ -6,10 +6,10 @@ let intervalId = null;
 let stepElements = [];
 let isPlaying = false;
 
-const steps = 32;
+// 初期設定
+let steps = 32;
 let melodyPattern = new Array(steps).fill(null);
 
-// スケールの定義
 const scales = {
     "Major": [0, 2, 4, 5, 7, 9, 11],
     "Minor": [0, 2, 3, 5, 7, 8, 10]
@@ -22,7 +22,7 @@ const rootNotes = [
 ];
 
 let currentScale = scales["Major"];
-let currentPianoNotes = []; // その時表示・演奏可能な音
+let currentPianoNotes = [];
 let currentPianoLabels = [];
 
 const melodicMarkovTable = {
@@ -36,6 +36,49 @@ let pattern = {
   snare: new Array(steps).fill(false),
   hihat: new Array(steps).fill(false)
 };
+
+// --- 初期化 & UI構築 ---
+
+function updateStepSize() {
+    steps = parseInt(document.getElementById("stepSelect").value);
+    // 配列のリサイズ
+    melodyPattern = new Array(steps).fill(null);
+    instruments.forEach(inst => {
+        pattern[inst] = new Array(steps).fill(false);
+    });
+
+    // UIを再作成
+    buildSequencerUI();
+    createPianoRoll();
+    if(isPlaying) stopBeat();
+}
+
+function buildSequencerUI() {
+    const sequencer = document.getElementById("sequencer");
+    sequencer.innerHTML = "";
+    instruments.forEach(inst => {
+        const row = document.createElement("div");
+        row.className = "row";
+        const label = document.createElement("div");
+        label.className = "inst-label";
+        label.innerText = inst;
+        row.appendChild(label);
+        stepElements[inst] = [];
+        for (let i = 0; i < steps; i++) {
+            const stepDiv = document.createElement("div");
+            stepDiv.className = "step";
+            stepDiv.onclick = () => {
+                pattern[inst][i] = !pattern[inst][i];
+                stepDiv.classList.toggle("active", pattern[inst][i]);
+            };
+            stepElements[inst].push(stepDiv);
+            row.appendChild(stepDiv);
+        }
+        sequencer.appendChild(row);
+    });
+}
+
+// --- 音声 & 再生エンジン ---
 
 async function loadSample(url) {
   const response = await fetch(url);
@@ -62,7 +105,6 @@ function playMelody(note, durationSteps = 1) {
   const osc = audioContext.createOscillator();
   const gain = audioContext.createGain();
   const filter = audioContext.createBiquadFilter();
-
   const freq = 440 * Math.pow(2, (note - 69) / 12);
   const bpm = document.getElementById("bpm").value;
   const stepTime = (60 / bpm) / 4;
@@ -74,7 +116,6 @@ function playMelody(note, durationSteps = 1) {
   filter.type = "lowpass";
   filter.frequency.setValueAtTime(2500, now);
   filter.frequency.exponentialRampToValueAtTime(1200, now + durationTime);
-
   gain.gain.setValueAtTime(0, now);
   gain.gain.linearRampToValueAtTime(0.2, now + 0.01);
   gain.gain.exponentialRampToValueAtTime(0.001, now + durationTime + 0.05);
@@ -82,23 +123,20 @@ function playMelody(note, durationSteps = 1) {
   osc.connect(filter);
   filter.connect(gain);
   gain.connect(audioContext.destination);
-
   osc.start(now);
   osc.stop(now + durationTime + 0.1);
 }
 
+// --- AI 生成ロジック ---
+
 function generateAIDrum() {
   for (let i = 0; i < steps; i++) {
     const pos = i % 8;
-    let kickProb = 0.05;
-    if (pos === 0) kickProb = 0.9;
-    if (pos === 4) kickProb = 0.3;
+    let kickProb = (pos === 0) ? 0.9 : (pos === 4 ? 0.3 : 0.05);
     pattern.kick[i] = Math.random() < kickProb;
-    let snareProb = 0.01;
-    if (pos === 4) snareProb = 0.8;
+    let snareProb = (pos === 4) ? 0.8 : 0.01;
     pattern.snare[i] = Math.random() < snareProb;
-    let hihatProb = 0.2;
-    if (pos % 2 === 0) hihatProb = 0.7;
+    let hihatProb = (pos % 2 === 0) ? 0.7 : 0.2;
     pattern.hihat[i] = Math.random() < hihatProb;
   }
   updateDrumUI();
@@ -112,39 +150,28 @@ function updateDrumUI() {
   });
 }
 
-// キー設定とメロディ生成
 function generateAIMelody() {
-    // ランダムなルート音とスケールを選択
     const root = rootNotes[Math.floor(Math.random() * rootNotes.length)];
     const scaleType = Math.random() > 0.5 ? "Major" : "Minor";
     currentScale = scales[scaleType];
-
-    // UI表示更新
     document.getElementById("keyDisplay").innerText = `Key: ${root.name} ${scaleType}`;
 
-    // ピアノロールの音階を再計算 (1オクターブ分 + α)
     currentPianoNotes = currentScale.map(s => root.val + s).reverse();
     currentPianoLabels = currentPianoNotes.map(n => {
         const names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
         return names[n % 12] + Math.floor(n / 12);
     });
 
-    createPianoRoll(); // 音階が変わるので再描画
-
+    createPianoRoll();
     let currentIndex = 0;
     melodyPattern.fill(null);
 
     for (let i = 0; i < steps; ) {
-        if (Math.random() < 0.1) {
-            melodyPattern[i] = null;
-            i++;
-            continue;
-        }
         const rand = Math.random();
+        if (rand < 0.1) { i++; continue; }
         let duration = rand > 0.9 ? 8 : (rand > 0.7 ? 4 : (rand > 0.4 ? 2 : 1));
         const candidates = melodicMarkovTable[currentIndex];
         currentIndex = candidates[Math.floor(Math.random() * candidates.length)];
-
         const note = root.val + currentScale[currentIndex];
         for (let d = 0; d < duration && (i + d) < steps; d++) {
             melodyPattern[i + d] = note;
@@ -154,58 +181,11 @@ function generateAIMelody() {
     updatePianoRoll();
 }
 
-// ------------------------------------------------
-// 保存・読込 (キー情報も含めるよう修正)
-// ------------------------------------------------
-const totalSlots = 5;
-function initSaveSlots() {
-    const container = document.getElementById("slotContainer");
-    container.innerHTML = "";
-    for (let i = 1; i <= totalSlots; i++) {
-        const btn = document.createElement("button");
-        btn.className = "slot-btn";
-        btn.id = `slot-${i}`;
-        btn.innerText = localStorage.getItem(`machine_slot_${i}`) ? `Slot ${i} (Saved)` : `Slot ${i} (Empty)`;
-        if (localStorage.getItem(`machine_slot_${i}`)) btn.classList.add("saved");
-        btn.onclick = (e) => e.shiftKey ? saveToSlot(i) : loadFromSlot(i);
-        container.appendChild(btn);
-    }
-}
-
-function saveToSlot(id) {
-    const data = {
-        pattern,
-        melody: melodyPattern,
-        bpm: document.getElementById("bpm").value,
-        keyText: document.getElementById("keyDisplay").innerText,
-        pNotes: currentPianoNotes,
-        pLabels: currentPianoLabels
-    };
-    localStorage.setItem(`machine_slot_${id}`, JSON.stringify(data));
-    initSaveSlots();
-}
-
-function loadFromSlot(id) {
-    const rawData = localStorage.getItem(`machine_slot_${id}`);
-    if (!rawData) return;
-    const data = JSON.parse(rawData);
-    pattern = data.pattern;
-    melodyPattern = data.melody;
-    document.getElementById("bpm").value = data.bpm;
-    if(data.keyText) document.getElementById("keyDisplay").innerText = data.keyText;
-    if(data.pNotes) currentPianoNotes = data.pNotes;
-    if(data.pLabels) currentPianoLabels = data.pLabels;
-
-    createPianoRoll();
-    updateDrumUI();
-    updatePianoRoll();
-    if (isPlaying) startBeat();
-}
+// --- ピアノロール ---
 
 function createPianoRoll() {
   const pianoRoll = document.getElementById("pianoRoll");
   pianoRoll.innerHTML = "";
-  // currentPianoNotesが未設定の場合は初期化
   if(currentPianoNotes.length === 0) {
       currentPianoNotes = [72, 71, 69, 67, 65, 64, 62, 60];
       currentPianoLabels = ["C5", "B4", "A4", "G4", "F4", "E4", "D4", "C4"];
@@ -241,6 +221,8 @@ function updatePianoRoll() {
   });
 }
 
+// --- 再生制御 ---
+
 function playStep(currentStep) {
   instruments.forEach(inst => {
     if (pattern[inst][currentStep]) {
@@ -253,21 +235,20 @@ function playStep(currentStep) {
   const note = melodyPattern[currentStep];
   const prevNote = melodyPattern[(currentStep - 1 + steps) % steps];
   if (note !== null && note !== prevNote) {
-    let durationSteps = 1;
+    let dur = 1;
     for (let i = 1; i < 8; i++) {
-      if (melodyPattern[(currentStep + i) % steps] === note) durationSteps++;
+      if (melodyPattern[(currentStep + i) % steps] === note) dur++;
       else break;
     }
-    playMelody(note, durationSteps);
+    playMelody(note, dur);
   }
 
   instruments.forEach(inst => {
     stepElements[inst].forEach(el => el.classList.remove("playing"));
-    stepElements[inst][currentStep].classList.add("playing");
+    if(stepElements[inst][currentStep]) stepElements[inst][currentStep].classList.add("playing");
   });
 
-  const allRows = document.querySelectorAll(".noteRow");
-  allRows.forEach(row => {
+  document.querySelectorAll(".noteRow").forEach(row => {
     const cells = row.querySelectorAll(".noteCell");
     cells.forEach((c, idx) => c.classList.toggle("notePlaying", idx === currentStep));
   });
@@ -291,6 +272,61 @@ function stopBeat() {
   document.querySelectorAll(".playing, .notePlaying").forEach(el => el.classList.remove("playing", "notePlaying"));
 }
 
+// --- 保存・読込 ---
+
+function initSaveSlots() {
+    const container = document.getElementById("slotContainer");
+    container.innerHTML = "";
+    for (let i = 1; i <= 5; i++) {
+        const btn = document.createElement("button");
+        btn.className = "slot-btn";
+        btn.id = `slot-${i}`;
+        const hasData = localStorage.getItem(`machine_slot_${i}`);
+        btn.innerText = hasData ? `Slot ${i} (Saved)` : `Slot ${i} (Empty)`;
+        if (hasData) btn.classList.add("saved");
+        btn.onclick = (e) => e.shiftKey ? saveToSlot(i) : loadFromSlot(i);
+        container.appendChild(btn);
+    }
+}
+
+function saveToSlot(id) {
+    const data = {
+        pattern, melody: melodyPattern, steps, // ステップ数も保存
+        bpm: document.getElementById("bpm").value,
+        keyText: document.getElementById("keyDisplay").innerText,
+        pNotes: currentPianoNotes, pLabels: currentPianoLabels
+    };
+    localStorage.setItem(`machine_slot_${id}`, JSON.stringify(data));
+    initSaveSlots();
+}
+
+function loadFromSlot(id) {
+    const rawData = localStorage.getItem(`machine_slot_${id}`);
+    if (!rawData) return;
+    const data = JSON.parse(rawData);
+
+    // ロードしたステップ数に合わせてUIを更新
+    if(data.steps) {
+        document.getElementById("stepSelect").value = data.steps;
+        steps = data.steps;
+    }
+    pattern = data.pattern;
+    melodyPattern = data.melody;
+    document.getElementById("bpm").value = data.bpm;
+    if(data.keyText) document.getElementById("keyDisplay").innerText = data.keyText;
+    currentPianoNotes = data.pNotes || [];
+    currentPianoLabels = data.pLabels || [];
+
+    buildSequencerUI();
+    createPianoRoll();
+    updateDrumUI();
+    updatePianoRoll();
+    if (isPlaying) startBeat();
+}
+
+// --- イベント登録 ---
+
+document.getElementById("stepSelect").onchange = updateStepSize;
 document.getElementById("bpm").onchange = () => { if (isPlaying) startBeat(); };
 document.getElementById("play").onclick = async () => {
   if (isPlaying) return;
@@ -302,27 +338,7 @@ document.getElementById("stop").onclick = stopBeat;
 document.getElementById("generateMelody").onclick = generateAIMelody;
 document.getElementById("generateDrum").onclick = generateAIDrum;
 
-const sequencer = document.getElementById("sequencer");
-instruments.forEach(inst => {
-  const row = document.createElement("div");
-  row.className = "row";
-  const label = document.createElement("div");
-  label.className = "inst-label";
-  label.innerText = inst;
-  row.appendChild(label);
-  stepElements[inst] = [];
-  for (let i = 0; i < steps; i++) {
-    const stepDiv = document.createElement("div");
-    stepDiv.className = "step";
-    stepDiv.onclick = () => {
-      pattern[inst][i] = !pattern[inst][i];
-      stepDiv.classList.toggle("active", pattern[inst][i]);
-    };
-    stepElements[inst].push(stepDiv);
-    row.appendChild(stepDiv);
-  }
-  sequencer.appendChild(row);
-});
-
+// 初期起動
+buildSequencerUI();
 createPianoRoll();
 initSaveSlots();

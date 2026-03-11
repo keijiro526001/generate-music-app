@@ -19,6 +19,15 @@ h1, h2, h3 {
     display: inline-block;
 }
 
+select, input {
+    background: #333;
+    color: white;
+    border: 1px solid #444;
+    padding: 5px;
+    border-radius: 4px;
+    margin-right: 10px;
+}
+
 button {
     background-color: #333;
     color: white;
@@ -45,12 +54,19 @@ button:hover { background-color: #444; }
     color: #ffa726;
 }
 
+/* 64ステップ時に画面をはみ出してもスクロールできるように設定 */
+.main-container {
+    overflow-x: auto;
+    padding-bottom: 20px;
+}
+
 #sequencer, #pianoRoll {
     display: inline-block;
     background: #1e1e1e;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    min-width: min-content; /* 中身に合わせて広がる */
 }
 
 .row, .noteRow {
@@ -60,15 +76,17 @@ button:hover { background-color: #444; }
 }
 
 .step, .noteCell {
-    width: 24px;
+    width: 20px; /* 少し小さくして視認性を確保 */
     height: 24px;
     margin: 1px;
     background-color: #2a2a2a;
     border: 1px solid #333;
     border-radius: 2px;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
+/* 8ステップごとの区切りを強調 */
 .step:nth-child(8n+2),
 .noteCell:nth-child(8n+2) {
     border-left: 2px solid #666 !important;
@@ -84,9 +102,10 @@ button:hover { background-color: #444; }
 
 .noteLabel, .inst-label {
     width: 60px;
-    font-size: 12px;
+    font-size: 11px;
     text-align: right;
     margin-right: 12px;
     color: #aaa;
     text-transform: uppercase;
+    flex-shrink: 0;
 }
