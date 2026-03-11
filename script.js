@@ -74,6 +74,42 @@ function playMelody(note, durationSteps = 1) {
   osc.stop(now + durationTime + 0.1);
 }
 
+// ドラムの自動生成ロジック
+function generateAIDrum() {
+  for (let i = 0; i < steps; i++) {
+    const pos = i % 8; // 1拍（8ステップ）の中での位置
+
+    // --- Kickのルール ---
+    // 1拍目(0)は高確率、5ステップ目は中確率、それ以外は低確率
+    let kickProb = 0.05;
+    if (pos === 0) kickProb = 0.9;
+    if (pos === 4) kickProb = 0.3;
+    pattern.kick[i] = Math.random() < kickProb;
+
+    // --- Snareのルール ---
+    // 2拍目(pos 8相当だがこの計算では4)の位置にスネア。
+    // 32ステップなので、i%8で見ると4ステップ目（2拍裏/4拍裏）に配置
+    let snareProb = 0.01;
+    if (pos === 4) snareProb = 0.8;
+    pattern.snare[i] = Math.random() < snareProb;
+
+    // --- Hi-hatのルール ---
+    // 表(0,2,4,6)は高確率、裏は中確率
+    let hihatProb = 0.2;
+    if (pos % 2 === 0) hihatProb = 0.7;
+    pattern.hihat[i] = Math.random() < hihatProb;
+  }
+  updateDrumUI();
+}
+
+function updateDrumUI() {
+  instruments.forEach(inst => {
+    stepElements[inst].forEach((el, i) => {
+      el.classList.toggle("active", pattern[inst][i]);
+    });
+  });
+}
+
 function generateAIMelody() {
   const baseNote = 60;
   let currentIndex = 0;
@@ -167,7 +203,7 @@ function playStep(currentStep) {
 }
 
 function startBeat() {
-  if (intervalId) clearInterval(intervalId); // 二重起動防止
+  if (intervalId) clearInterval(intervalId);
   isPlaying = true;
   const bpm = document.getElementById("bpm").value;
   const interval = (60 / bpm) * 1000 / 4;
@@ -180,25 +216,25 @@ function startBeat() {
 function stopBeat() {
   if (intervalId) clearInterval(intervalId);
   isPlaying = false;
-  step = 0; // 停止時は最初に戻す
+  step = 0;
   document.querySelectorAll(".playing, .notePlaying").forEach(el => el.classList.remove("playing", "notePlaying"));
 }
 
-// BPMが変更されたときにリアルタイムで反映する
 document.getElementById("bpm").oninput = () => {
   if (isPlaying) {
-    startBeat(); // 再生中なら新しいBPMでタイマーを再起動
+    startBeat();
   }
 };
 
 document.getElementById("play").onclick = async () => {
-  if (isPlaying) return; // 既に再生中なら何もしない
+  if (isPlaying) return;
   await loadSounds();
   await audioContext.resume();
   startBeat();
 };
 document.getElementById("stop").onclick = stopBeat;
 document.getElementById("generateMelody").onclick = generateAIMelody;
+document.getElementById("generateDrum").onclick = generateAIDrum; // 追加
 
 const sequencer = document.getElementById("sequencer");
 instruments.forEach(inst => {
