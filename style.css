@@ -1,52 +1,83 @@
-body{
-  font-family: sans-serif;
-  text-align:center;
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    text-align: center;
+    background-color: #121212;
+    color: #e0e0e0;
+    padding: 20px;
 }
 
-.row{
-  margin:10px;
+h1, h2 {
+    color: #ffffff;
+    font-weight: 300;
+    margin-bottom: 20px;
 }
 
-.step{
-  width:40px;
-  height:40px;
-  margin:5px;
-  border:1px solid black;
-  display:inline-block;
-  cursor:pointer;
+.controls {
+    margin-bottom: 30px;
+    background: #1e1e1e;
+    padding: 15px;
+    border-radius: 8px;
+    display: inline-block;
 }
 
-.step:nth-of-type(4n){
-  border-right:3px solid #000;
+button {
+    background-color: #333;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    margin: 0 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
 }
 
-.active{
-  background:orange;
+button:hover { background-color: #444; }
+#generateMelody { background-color: #2e5cb8; }
+#generateMelody:hover { background-color: #3d71d9; }
+
+#sequencer, #pianoRoll {
+    display: inline-block;
+    background: #1e1e1e;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
-.playing{
-  border:3px solid red;
+.row, .noteRow {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2px;
 }
 
-#pianoRoll{
-  margin-top:20px;
+.step, .noteCell {
+    width: 24px;
+    height: 24px;
+    margin: 1px;
+    background-color: #2a2a2a;
+    border: 1px solid #333;
+    border-radius: 2px;
+    cursor: pointer;
 }
 
-.noteRow{
-  display:flex;
+.step:nth-child(8n+2),
+.noteCell:nth-child(8n+2) {
+    border-left: 2px solid #666 !important;
 }
 
-.noteCell{
-  width:30px;
-  height:22px;
-  border:1px solid #ccc;
-  cursor:pointer;
+.active { background-color: #ffa726; box-shadow: 0 0 8px #ffa726; }
+.noteActive { background-color: #66bb6a; box-shadow: 0 0 8px #66bb6a; }
+
+.playing, .notePlaying {
+    background-color: #ffffff !important;
+    filter: brightness(1.5);
 }
 
-.noteActive{
-  background:#4caf50;
-}
-
-.notePlaying{
-  background:#ff9800;
+.noteLabel, .inst-label {
+    width: 60px;
+    font-size: 12px;
+    text-align: right;
+    margin-right: 12px;
+    color: #aaa;
+    text-transform: uppercase;
 }

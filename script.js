@@ -1,27 +1,15 @@
 const audioContext = new AudioContext();
 
-// ディレイ（残響）の設定
-const delay = audioContext.createDelay();
-delay.delayTime.value = 0.3;
-const feedback = audioContext.createGain();
-feedback.gain.value = 0.3;
-const delayFilter = audioContext.createBiquadFilter();
-delayFilter.frequency.value = 1000;
-
-delay.connect(feedback);
-feedback.connect(delayFilter);
-delayFilter.connect(delay);
-delay.connect(audioContext.destination);
-
 let kickBuffer, snareBuffer, hihatBuffer;
 let step = 0;
 let intervalId;
 let stepElements = [];
 let isPlaying = false;
-const steps = 16;
+
+const steps = 32;
 let melodyPattern = new Array(steps).fill(null);
 
-const scale = [0, 2, 4, 5, 7, 9, 11]; // メジャースケール
+const scale = [0, 2, 4, 5, 7, 9, 11];
 const melodicMarkovTable = {
   0: [0, 1, 1, 2, 4], 1: [0, 0, 2, 2], 2: [0, 1, 3, 4],
   3: [2, 2, 4, 4], 4: [0, 0, 5, 6], 5: [4, 4, 6], 6: [0, 0, 0, 5]
@@ -35,8 +23,6 @@ const pattern = {
   snare: new Array(steps).fill(false),
   hihat: new Array(steps).fill(false)
 };
-
-const sequencer = document.getElementById("sequencer");
 
 async function loadSample(url) {
   const response = await fetch(url);
@@ -58,60 +44,49 @@ function playSound(buffer) {
   source.start();
 }
 
-// 1. ディレイ設定を完全に削除または無効化
-// (スクリプト上部の delay, feedback, delayFilter 関連のコードは消してもOKです)
-
-// 2. 修正版 playMelody (ディレイなし・シンプル設定)
 function playMelody(note, durationSteps = 1) {
   if (typeof note !== "number") return;
-
   const osc = audioContext.createOscillator();
   const gain = audioContext.createGain();
   const filter = audioContext.createBiquadFilter();
 
   const freq = 440 * Math.pow(2, (note - 69) / 12);
   const bpm = document.getElementById("bpm").value;
-  const stepTime = (60 / bpm) / 2;
+  const stepTime = (60 / bpm) / 4;
   const durationTime = stepTime * durationSteps;
   const now = audioContext.currentTime;
 
-  // 音色：三角波（サイン波より少しはっきりし、耳に優しい音）
   osc.type = "triangle";
   osc.frequency.value = freq;
-
-  // フィルター：高音を少しカットして落ち着いた音にする
   filter.type = "lowpass";
   filter.frequency.setValueAtTime(2500, now);
   filter.frequency.exponentialRampToValueAtTime(1200, now + durationTime);
 
-  // エンベロープ：音の出だしと終わりを滑らかにする
   gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(0.2, now + 0.01); // アタック
-  gain.gain.exponentialRampToValueAtTime(0.001, now + durationTime + 0.05); // リリース
+  gain.gain.linearRampToValueAtTime(0.2, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + durationTime + 0.05);
 
-  // 接続：スピーカー(destination)のみに接続
   osc.connect(filter);
   filter.connect(gain);
   gain.connect(audioContext.destination);
 
-  // 再生
   osc.start(now);
   osc.stop(now + durationTime + 0.1);
 }
 
 function generateAIMelody() {
-  const baseNote = parseInt(document.getElementById("key")?.value) || 60;
+  const baseNote = 60;
   let currentIndex = 0;
   melodyPattern.fill(null);
 
   for (let i = 0; i < steps; ) {
-    if (Math.random() < 0.2) {
+    if (Math.random() < 0.1) {
       melodyPattern[i] = null;
       i++;
       continue;
     }
     const rand = Math.random();
-    let duration = rand > 0.8 ? 3 : (rand > 0.5 ? 2 : 1);
+    let duration = rand > 0.9 ? 8 : (rand > 0.7 ? 4 : (rand > 0.4 ? 2 : 1));
     const candidates = melodicMarkovTable[currentIndex];
     currentIndex = candidates[Math.floor(Math.random() * candidates.length)];
     const note = baseNote + scale[currentIndex];
@@ -136,7 +111,6 @@ function createPianoRoll() {
     for (let s = 0; s < steps; s++) {
       const cell = document.createElement("div");
       cell.className = "noteCell";
-      if (melodyPattern[s] === pianoNotes[r]) cell.classList.add("noteActive");
       cell.onclick = () => {
         melodyPattern[s] = (melodyPattern[s] === pianoNotes[r]) ? null : pianoNotes[r];
         updatePianoRoll();
@@ -171,7 +145,7 @@ function playStep(currentStep) {
 
   if (note !== null && note !== prevNote) {
     let durationSteps = 1;
-    for (let i = 1; i < 4; i++) {
+    for (let i = 1; i < 8; i++) {
       if (melodyPattern[(currentStep + i) % steps] === note) durationSteps++;
       else break;
     }
@@ -186,16 +160,17 @@ function playStep(currentStep) {
   const allRows = document.querySelectorAll(".noteRow");
   allRows.forEach(row => {
     const cells = row.querySelectorAll(".noteCell");
-    cells.forEach(c => c.classList.remove("notePlaying"));
-    if (cells[currentStep]) cells[currentStep].classList.add("notePlaying");
+    cells.forEach((c, idx) => {
+      c.classList.toggle("notePlaying", idx === currentStep);
+    });
   });
 }
 
 function startBeat() {
+  if (intervalId) clearInterval(intervalId); // 二重起動防止
   isPlaying = true;
-  step = 0;
   const bpm = document.getElementById("bpm").value;
-  const interval = (60 / bpm) * 1000 / 2;
+  const interval = (60 / bpm) * 1000 / 4;
   intervalId = setInterval(() => {
     playStep(step);
     step = (step + 1) % steps;
@@ -205,10 +180,19 @@ function startBeat() {
 function stopBeat() {
   if (intervalId) clearInterval(intervalId);
   isPlaying = false;
+  step = 0; // 停止時は最初に戻す
+  document.querySelectorAll(".playing, .notePlaying").forEach(el => el.classList.remove("playing", "notePlaying"));
 }
 
+// BPMが変更されたときにリアルタイムで反映する
+document.getElementById("bpm").oninput = () => {
+  if (isPlaying) {
+    startBeat(); // 再生中なら新しいBPMでタイマーを再起動
+  }
+};
+
 document.getElementById("play").onclick = async () => {
-  if (isPlaying) stopBeat();
+  if (isPlaying) return; // 既に再生中なら何もしない
   await loadSounds();
   await audioContext.resume();
   startBeat();
@@ -216,11 +200,13 @@ document.getElementById("play").onclick = async () => {
 document.getElementById("stop").onclick = stopBeat;
 document.getElementById("generateMelody").onclick = generateAIMelody;
 
+const sequencer = document.getElementById("sequencer");
 instruments.forEach(inst => {
   const row = document.createElement("div");
   row.className = "row";
-  const label = document.createElement("span");
-  label.innerText = inst + " ";
+  const label = document.createElement("div");
+  label.className = "inst-label";
+  label.innerText = inst;
   row.appendChild(label);
   stepElements[inst] = [];
   for (let i = 0; i < steps; i++) {

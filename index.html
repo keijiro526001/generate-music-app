@@ -1,30 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Drum Machine</title>
+    <title>Modern Drum & Melody Machine</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<h1>Drum Machine</h1>
-<label>BPM:</label>
-<input id="bpm" type="number" value="120">
-<br>
-<button id="generateMelody">Generate Melody</button>
+<h1>AI Composer & Drum Machine</h1>
 
-<br><br>
+<div class="controls">
+    <label>BPM:</label>
+    <input id="bpm" type="number" value="120" min="40" max="240">
+    <button id="generateMelody">Generate Melody</button>
+    <button id="play">Play</button>
+    <button id="stop">Stop</button>
+</div>
 
-<button id="play">Play</button>
-<button id="stop">Stop</button>
-
-<div id="sequencer"></div>
-
-<h2>Melody</h2>
-<div id="pianoRoll"></div>
+<div class="main-container">
+    <div id="sequencer"></div>
+    <h2>Melody</h2>
+    <div id="pianoRoll"></div>
+</div>
 
 <script src="script.js"></script>
-
 </body>
 </html>
